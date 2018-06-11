@@ -69,8 +69,6 @@ module Yesod.Auth.Http.Basic
        , defaultAuthSettings
        ) where
 
-import           Control.Applicative
-import           Control.Monad.Catch    (MonadThrow)
 import           Data.ByteString        (ByteString)
 import qualified Data.ByteString        as BS
 import           Data.ByteString.Base64 (decodeLenient)
@@ -114,19 +112,16 @@ type CheckCreds = ByteString
 -- TODO use more general type than Text to represent
 -- the auth id
 defaultMaybeBasicAuthId
-  :: (MonadIO m, MonadThrow m, MonadBaseControl IO m)
-     => CheckCreds
-     -> AuthSettings
-     -> HandlerT site m (Maybe Text)
+  :: CheckCreds
+  -> AuthSettings
+  -> HandlerFor site (Maybe Text)
 defaultMaybeBasicAuthId auth cfg =
     cachedAuth $ waiRequest >>= maybeBasicAuthId auth cfg
 
 
 -- | Cached Authentication credentials
-cachedAuth
-  :: (MonadIO m, MonadThrow m, MonadBaseControl IO m)
-     => HandlerT site m (Maybe Text)
-     -> HandlerT site m (Maybe Text)
+cachedAuth :: HandlerFor site (Maybe Text)
+           -> HandlerFor site (Maybe Text)
 cachedAuth = fmap unCached . cached . fmap CachedBasicAuthId
 
 
@@ -138,12 +133,10 @@ cachedAuth = fmap unCached . cached . fmap CachedBasicAuthId
 --
 -- Subsequent calls to 'maybeAuthId' do not require the 'CheckCreds'
 -- function to be run again.
-maybeBasicAuthId
-  :: MonadIO m
-     => CheckCreds
-     -> AuthSettings
-     -> Request
-     -> m (Maybe Text)
+maybeBasicAuthId :: CheckCreds
+                 -> AuthSettings
+                 -> Request
+                 -> HandlerFor site (Maybe Text)
 maybeBasicAuthId checkCreds AuthSettings{..} req =
     case authorization of
       Just (strategy, userpass)
